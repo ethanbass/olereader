@@ -116,28 +116,54 @@ print.ole_file <- function(x, ...){
 #' entry reachable from the root and records its parent.
 #' @noRd
 ole_directory <- function(bytes, version){
-  m <- matrix(bytes[seq_len(length(bytes) %/% 128 * 128)], nrow = 128)
-  u32 <- function(rows) colSums(matrix(as.integer(m[rows, , drop = FALSE]),
-                                       nrow = 4) * 256^(0:3))
-  id <- function(rows){
-    x <- u32(rows)
+  m <- bytes
+  length(m) <- length(m) %/% 128 * 128
+  dim(m) <- c(128L, length(m) %/% 128)
+  w <- matrix(readBin(m, "integer", n = length(m) %/% 4, size = 4,
+                      endian = "little"), nrow = 32)
+  u32 <- function(word){
+    x <- as.numeric(w[word, ])
+    x[is.na(x)] <- -2^31
+    x %% 2^32
+  }
+  id <- function(word){
+    x <- u32(word)
     ifelse(x >= 0xFFFFFFFA, -1, x)
   }
+  n <- ncol(m)
   name_len <- as.integer(m[65, ]) + 256L * as.integer(m[66, ])
   name_len <- pmax(pmin((name_len + 1L) %/% 2L * 2L, 64L) - 2L, 0L)
-  names <- iconv(lapply(seq_len(ncol(m)), function(j){
-    b <- m[seq_len(name_len[j]), j]
-    nul <- which(b[c(TRUE, FALSE)] == 0 & b[c(FALSE, TRUE)] == 0)
-    if (length(nul)) b[seq_len(2 * (nul[1] - 1))] else b
-  }), from = "UTF-16LE", to = "UTF-8", sub = "\ufffd")
-  names[is.na(names)] <- "\ufffd"
-  size <- u32(121:124)
-  if (version >= 4) size <- size + u32(125:128) * 2^32
+  nul <- which(m[seq(1, 63, 2), , drop = FALSE] == as.raw(0) &
+                 m[seq(2, 64, 2), , drop = FALSE] == as.raw(0), arr.ind = TRUE)
+  first <- !duplicated(nul[, 2])
+  name_len[nul[first, 2]] <- pmin(name_len[nul[first, 2]],
+                                  2L * (nul[first, 1] - 1L))
+  pos <- rep(1:64, n)
+  keep <- pos <= rep(name_len, each = 64)
+  b <- m[1:64, , drop = FALSE][keep]
+  pos <- pos[keep]
+  entry <- factor(rep(seq_len(n), each = 64)[keep], levels = seq_len(n))
+  utf8 <- function(b){
+    x <- iconv(unname(split(b, entry)), from = "UTF-16LE", to = "UTF-8",
+               sub = "\ufffd")
+    x[is.na(x)] <- "\ufffd"
+    x
+  }
+  names <- utf8(b)
+  upper <- which(pos %% 2L == 1L & b >= as.raw(0x41) & b <= as.raw(0x5A))
+  upper <- upper[b[upper + 1L] == as.raw(0)]
+  b[upper] <- as.raw(as.integer(b[upper]) + 32L)
+  keys <- utf8(b)
+  size <- u32(31)
+  if (version >= 4) size <- size + u32(32) * 2^32
   dir <- data.frame(name = names, type = as.integer(m[67, ]),
-                    left = id(69:72), right = id(73:76), child = id(77:80),
-                    start = id(117:120), size = size)
+                    left = id(18), right = id(19), child = id(20),
+                    start = id(30), size = size)
 
-  n <- nrow(dir)
+  type <- dir$type
+  left <- dir$left
+  right <- dir$right
+  child <- dir$child
   parent <- integer(n)
   depth <- integer(n)
   visited <- logical(n)
@@ -147,7 +173,7 @@ ole_directory <- function(bytes, version){
   if (n){
     visited[1] <- TRUE
     top <- 1L
-    stack_id[1] <- dir$child[1] + 1
+    stack_id[1] <- child[1] + 1
     stack_parent[1] <- 1L
   }
   while (top > 0){
@@ -162,21 +188,21 @@ ole_directory <- function(bytes, version){
     visited[i] <- TRUE
     parent[i] <- p
     depth[i] <- depth[p] + 1L
-    stack_id[top + 1:2] <- c(dir$left[i], dir$right[i]) + 1
+    stack_id[top + 1:2] <- c(left[i], right[i]) + 1
     stack_parent[top + 1:2] <- p
     top <- top + 2L
-    if (dir$type[i] == 1L){
+    if (type[i] == 1L){
       if (depth[i] > 64){
         stop("The storages of this OLE file are nested more than 64 levels ",
              "deep.", call. = FALSE)
       }
       top <- top + 1L
-      stack_id[top] <- dir$child[i] + 1
+      stack_id[top] <- child[i] + 1
       stack_parent[top] <- i
     }
   }
   dir$parent <- parent
-  dir$key <- ole_fold(dir$name)
+  dir$key <- keys
   dir
 }
 

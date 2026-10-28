@@ -290,6 +290,26 @@ test_that("a directory cut short gives an error", {
   expect_error(ole_open(cut), "past the end of the directory")
 })
 
+test_that("only A to Z are folded in the keys of names outside ASCII", {
+  bytes <- c(cfb_entry("Root Entry", 5, child = 1),
+             cfb_entry("Ł䄀ĀData", 2))
+  dir <- ole_directory(bytes, 3)
+  expect_identical(dir$key[2], "Ł䄀Ādata")
+  expect_identical(dir$key, ole_fold(dir$name))
+})
+
+test_that("directory fields of 0x80000000 and above are read as unsigned", {
+  data <- cfb_entry("data", 2)
+  data[121:124] <- as.raw(c(0, 0, 0, 0x80))
+  dir <- ole_directory(c(cfb_entry("Root Entry", 5, child = 1), data), 3)
+  expect_identical(dir$size[2], 2^31)
+  for (high in c(0x80, 0x90)){
+    data[69:72] <- as.raw(c(0, 0, 0, high))
+    bytes <- c(cfb_entry("Root Entry", 5, child = 1), data)
+    expect_error(ole_directory(bytes, 3), "past the end of the directory")
+  }
+})
+
 test_that("a loop among siblings lists each stream once", {
   ole <- ole_open(patch_cfb(path, 1352, cfb_i32(1)))
   expect_identical(names(ole_streams(ole)), c("data", "notes/readme"))
