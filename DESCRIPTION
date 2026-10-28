@@ -1,0 +1,22 @@
+Package: olereader
+Title: Read OLE Compound Files
+Version: 0.1.0
+Authors@R:
+    person(given = "Ethan", family = "Bass", email = "ethanbass@gmail.com",
+           role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-6175-6739"))
+Description: Reads Microsoft compound files, also known as OLE2 or
+    structured storage files, in pure R. Lists the streams in a file,
+    returns their contents as raw vectors and extracts them to disk.
+    Written from the MS-CFB specification
+    <https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-cfb/>.
+License: MIT + file LICENSE
+URL: https://github.com/ethanbass/olereader
+BugReports: https://github.com/ethanbass/olereader/issues
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Suggests:
+    testthat (>= 3.0.0),
+    withr
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.1
