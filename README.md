@@ -1,5 +1,9 @@
 # olereader <img src="man/figures/logo.png" align="right" height="139" alt="olereader hex logo: an engraving of a dancer with raised arms holding castanets" />
 
+<!-- badges: start -->
+[![Last commit](https://img.shields.io/github/last-commit/ethanbass/olereader)](https://github.com/ethanbass/olereader/commits/main)
+<!-- badges: end -->
+
 olereader reads Microsoft compound files, also called OLE2 or structured
 storage files, in pure R. A compound file works like a small file system
 inside a single file: *storages* act as folders and *streams* hold the data.
@@ -17,6 +21,14 @@ Install the development version from GitHub:
 ``` r
 # install.packages("pak")
 pak::pak("ethanbass/olereader")
+```
+
+or install a binary from R-universe:
+
+``` r
+install.packages("olereader",
+                 repos = c("https://ethanbass.r-universe.dev",
+                           "https://cloud.r-project.org"))
 ```
 
 ## Usage
