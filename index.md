@@ -20,6 +20,15 @@ Install the development version from GitHub:
 pak::pak("ethanbass/olereader")
 ```
 
+or install a binary from R-universe:
+
+``` r
+
+install.packages("olereader",
+                 repos = c("https://ethanbass.r-universe.dev",
+                           "https://cloud.r-project.org"))
+```
+
 ## Usage
 
 [`ole_open()`](https://ethanbass.github.io/olereader/reference/ole_open.md)
