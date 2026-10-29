@@ -1,6 +1,7 @@
 # olereader <img src="man/figures/logo.png" align="right" height="139" alt="olereader hex logo: an engraving of a dancer with raised arms holding castanets" />
 
 <!-- badges: start -->
+[![olereader status badge](https://ethanbass.r-universe.dev/badges/olereader)](https://ethanbass.r-universe.dev/olereader)
 [![Last commit](https://img.shields.io/github/last-commit/ethanbass/olereader)](https://github.com/ethanbass/olereader/commits/main)
 <!-- badges: end -->
 
